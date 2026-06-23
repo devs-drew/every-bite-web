@@ -1,28 +1,30 @@
 <template>
-  <div class="flex flex-col items-center gap-1">
-    <svg :width="size" :height="size" viewBox="0 0 120 120">
-      <!-- Track -->
-      <circle cx="60" cy="60" :r="radius" fill="none" stroke="currentColor"
-        class="text-muted/30" :stroke-width="strokeWidth" />
-      <!-- Progress -->
-      <circle cx="60" cy="60" :r="radius" fill="none"
-        :stroke="ringColor"
-        :stroke-width="strokeWidth"
-        stroke-linecap="round"
-        :stroke-dasharray="circumference"
-        :stroke-dashoffset="dashOffset"
-        transform="rotate(-90 60 60)"
-        style="transition: stroke-dashoffset 0.5s ease" />
-      <!-- Center text -->
-      <text x="60" y="55" text-anchor="middle" class="fill-foreground" font-size="18" font-weight="600">
-        {{ remaining > 0 ? remaining : 0 }}
-      </text>
-      <text x="60" y="72" text-anchor="middle" class="fill-muted-foreground" font-size="9">
-        {{ remaining > 0 ? 'kcal left' : 'over goal' }}
-      </text>
-    </svg>
-    <div class="text-xs text-muted-foreground">
-      {{ consumed }} / {{ target }} kcal
+  <div class="flex flex-col items-center">
+    <div class="relative" :style="{ width: `${size}px`, height: `${size}px` }">
+      <svg :width="size" :height="size" viewBox="0 0 120 120" class="-rotate-90">
+        <!-- Track -->
+        <circle cx="60" cy="60" :r="radius" fill="none" stroke="#e9efeb" :stroke-width="strokeWidth" />
+        <!-- Progress -->
+        <circle cx="60" cy="60" :r="radius" fill="none"
+          :stroke="ringColor"
+          :stroke-width="strokeWidth"
+          stroke-linecap="round"
+          :stroke-dasharray="circumference"
+          :stroke-dashoffset="dashOffset"
+          style="transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1)" />
+      </svg>
+      <!-- Center -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span class="text-3xl font-extrabold text-ink-900 tabular-nums leading-none">
+          {{ remaining > 0 ? remaining : 0 }}
+        </span>
+        <span class="text-xs font-medium mt-1" :class="remaining > 0 ? 'text-brand-600' : 'text-danger-text'">
+          {{ remaining > 0 ? 'kcal left' : 'over goal' }}
+        </span>
+      </div>
+    </div>
+    <div class="text-xs text-ink-500 mt-3">
+      <span class="font-semibold text-ink-700">{{ Math.round(consumed) }}</span> / {{ target }} kcal
     </div>
   </div>
 </template>
@@ -31,8 +33,8 @@
 import { computed } from 'vue'
 
 const props = defineProps<{ consumed: number; target: number; size?: number }>()
-const size = computed(() => props.size ?? 160)
-const strokeWidth = 10
+const size = computed(() => props.size ?? 168)
+const strokeWidth = 11
 const radius = 50
 const circumference = 2 * Math.PI * radius
 const progress = computed(() => Math.min(props.consumed / props.target, 1))

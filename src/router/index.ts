@@ -4,7 +4,16 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', redirect: '/dashboard' },
+    {
+      path: '/',
+      redirect: () => {
+        const auth = useAuthStore()
+        if (auth.isAuthenticated) return '/dashboard'
+        if (!localStorage.getItem('onboarding_seen')) return '/onboarding'
+        return '/login'
+      },
+    },
+    { path: '/onboarding', component: () => import('@/views/OnboardingView.vue'), meta: { guest: true } },
     { path: '/login', component: () => import('@/views/AuthView.vue'), meta: { guest: true } },
     { path: '/register', component: () => import('@/views/AuthView.vue'), meta: { guest: true } },
     { path: '/dashboard', component: () => import('@/views/DashboardView.vue'), meta: { requiresAuth: true } },

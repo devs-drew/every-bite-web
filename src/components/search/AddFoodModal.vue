@@ -1,72 +1,58 @@
 <template>
   <Teleport to="body">
     <div v-if="modelValue" class="fixed inset-0 z-50 flex items-end justify-center">
-      <div class="absolute inset-0 bg-black/40" @click="$emit('update:modelValue', false)" />
-      <div class="relative bg-white rounded-t-3xl w-full max-w-md p-6 space-y-5"
-        style="animation: slideUp 0.25s ease-out">
-        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto -mt-1 mb-2" />
+      <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-sm" style="animation: eb-fade .2s ease-out"
+        @click="$emit('update:modelValue', false)" />
+      <div class="relative bg-surface rounded-t-4xl w-full max-w-md p-6 space-y-5"
+        style="animation: eb-slide-up .28s cubic-bezier(.4,0,.2,1)">
+        <div class="w-10 h-1.5 bg-ink-200 rounded-full mx-auto -mt-1.5 mb-1" />
 
-        <div>
-          <h2 class="font-semibold text-gray-900 text-base">{{ food.food_name }}</h2>
-          <p v-if="food.brand_name" class="text-xs text-gray-400 mt-0.5">{{ food.brand_name }}</p>
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0">
+            <Utensils class="w-5 h-5 text-brand-600" />
+          </span>
+          <div class="min-w-0">
+            <h2 class="font-bold text-ink-900 text-base truncate">{{ food.food_name }}</h2>
+            <p v-if="food.brand_name" class="text-xs text-ink-400 truncate">{{ food.brand_name }}</p>
+          </div>
         </div>
 
         <!-- Meal selector -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Meal</label>
+        <div class="space-y-2">
+          <label class="eb-eyebrow">Meal</label>
           <div class="flex gap-2 flex-wrap">
-            <button v-for="m in meals" :key="m"
-              type="button"
-              @click="selectedMeal = m"
-              class="px-3 py-1.5 rounded-lg text-sm capitalize transition"
-              :class="selectedMeal === m
-                ? 'bg-gray-900 text-white font-medium'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+            <button v-for="m in meals" :key="m" type="button" @click="selectedMeal = m"
+              class="capitalize" :class="selectedMeal === m ? 'eb-chip-on' : 'eb-chip-off'">
               {{ m }}
             </button>
           </div>
         </div>
 
         <!-- Serving size -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Serving (g)</label>
+        <div class="space-y-2">
+          <label class="eb-eyebrow">Serving (g)</label>
           <div class="flex gap-2">
-            <input v-model.number="servingG" type="number" min="1" max="9999"
-              class="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
-            <button v-for="g in [50, 100, 150]" :key="g"
-              type="button"
-              @click="servingG = g"
-              class="px-3 py-2 text-xs rounded-xl transition"
-              :class="servingG === g
-                ? 'bg-gray-900 text-white font-medium'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+            <input v-model.number="servingG" type="number" min="1" max="9999" class="eb-input flex-1" />
+            <button v-for="g in [50, 100, 150]" :key="g" type="button" @click="servingG = g"
+              class="shrink-0" :class="servingG === g ? 'eb-chip-on' : 'eb-chip-off'">
               {{ g }}g
             </button>
           </div>
         </div>
 
         <!-- Macro preview -->
-        <div class="grid grid-cols-4 gap-2 bg-gray-50 rounded-2xl p-4 text-center">
+        <div class="grid grid-cols-4 gap-2 bg-surface-sunken rounded-3xl p-4 text-center">
           <div>
-            <p class="text-base font-bold text-gray-900">{{ preview.calories }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">kcal</p>
+            <p class="text-lg font-extrabold text-ink-900 tabular-nums">{{ preview.calories }}</p>
+            <p class="text-[11px] text-ink-400 mt-0.5">kcal</p>
           </div>
-          <div>
-            <p class="text-base font-bold text-gray-900">{{ preview.protein }}g</p>
-            <p class="text-xs text-gray-400 mt-0.5">protein</p>
-          </div>
-          <div>
-            <p class="text-base font-bold text-gray-900">{{ preview.carbs }}g</p>
-            <p class="text-xs text-gray-400 mt-0.5">carbs</p>
-          </div>
-          <div>
-            <p class="text-base font-bold text-gray-900">{{ preview.fat }}g</p>
-            <p class="text-xs text-gray-400 mt-0.5">fat</p>
+          <div v-for="m in macroPreview" :key="m.label">
+            <p class="text-lg font-extrabold tabular-nums" :style="{ color: m.color }">{{ m.value }}g</p>
+            <p class="text-[11px] text-ink-400 mt-0.5">{{ m.label }}</p>
           </div>
         </div>
 
-        <button @click="handleAdd" :disabled="adding"
-          class="w-full bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition">
+        <button @click="handleAdd" :disabled="adding" class="eb-btn-primary w-full">
           {{ adding ? 'Adding…' : 'Add to Log' }}
         </button>
       </div>
@@ -76,6 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { Utensils } from '@lucide/vue'
 import { useFoodLogStore } from '@/stores/foodLog'
 import type { FoodResult } from '@/stores/foodSearch'
 
@@ -104,6 +91,12 @@ const preview = computed(() => {
   }
 })
 
+const macroPreview = computed(() => [
+  { label: 'protein', value: preview.value.protein, color: '#3b82f6' },
+  { label: 'carbs', value: preview.value.carbs, color: '#f59e0b' },
+  { label: 'fat', value: preview.value.fat, color: '#f43f5e' },
+])
+
 async function handleAdd() {
   adding.value = true
   try {
@@ -127,10 +120,3 @@ async function handleAdd() {
   } finally { adding.value = false }
 }
 </script>
-
-<style scoped>
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-</style>

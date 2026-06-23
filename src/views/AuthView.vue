@@ -1,78 +1,75 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-white px-6">
-    <div class="w-full max-w-sm space-y-8">
-      <div class="text-center">
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900">Every Bite</h1>
-        <p class="text-gray-500 text-sm mt-2">
-          {{ isLogin ? 'Sign in to continue' : 'Create your account' }}
-        </p>
+  <div class="min-h-screen flex flex-col bg-canvas max-w-md mx-auto px-6">
+    <!-- Brand -->
+    <div class="pt-20 pb-8 text-center">
+      <div class="w-16 h-16 rounded-3xl bg-brand-600 shadow-brand flex items-center justify-center mx-auto mb-4">
+        <Salad class="w-8 h-8 text-white" :stroke-width="2" />
       </div>
+      <h1 class="text-2xl font-extrabold tracking-tight text-ink-900">Every Bite</h1>
+      <p class="text-ink-500 text-sm mt-1.5">
+        {{ isLogin ? 'Welcome back — let\'s keep it going' : 'Start tracking in seconds' }}
+      </p>
+    </div>
 
+    <!-- Card -->
+    <div class="eb-card p-6">
       <!-- Login -->
       <form v-if="isLogin" @submit.prevent="handleLogin" class="space-y-4">
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Email</label>
-          <input v-model="form.email" type="email" required placeholder="you@example.com"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Email</label>
+          <input v-model="form.email" type="email" required placeholder="you@example.com" class="eb-input" />
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Password</label>
-          <input v-model="form.password" type="password" required placeholder="••••••••"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Password</label>
+          <input v-model="form.password" type="password" required placeholder="••••••••" class="eb-input" />
         </div>
-        <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
-        <button type="submit" :disabled="loading"
-          class="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition">
+        <p v-if="error" class="text-sm text-danger-text">{{ error }}</p>
+        <button type="submit" :disabled="loading" class="eb-btn-primary w-full mt-1">
           {{ loading ? 'Signing in…' : 'Sign In' }}
         </button>
-        <button type="button" @click="handleDemo"
-          class="w-full border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+        <button type="button" @click="handleDemo" class="eb-btn-secondary w-full">
           Try Demo
         </button>
       </form>
 
       <!-- Register -->
       <form v-else @submit.prevent="handleRegister" class="space-y-4">
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Name</label>
-          <input v-model="form.name" type="text" required placeholder="Your name"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Name</label>
+          <input v-model="form.name" type="text" required placeholder="Your name" class="eb-input" />
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Email</label>
-          <input v-model="form.email" type="email" required placeholder="you@example.com"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Email</label>
+          <input v-model="form.email" type="email" required placeholder="you@example.com" class="eb-input" />
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Password</label>
-          <input v-model="form.password" type="password" required :minlength="8" placeholder="••••••••"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Password</label>
+          <input v-model="form.password" type="password" required :minlength="8" placeholder="••••••••" class="eb-input" />
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Daily Calorie Target</label>
-          <input v-model.number="form.daily_calorie_target" type="number" min="500" max="9999" placeholder="2000"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition" />
+        <div>
+          <label class="eb-label">Daily Calorie Target</label>
+          <input v-model.number="form.daily_calorie_target" type="number" min="500" max="9999" placeholder="2000" class="eb-input" />
         </div>
-        <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
-        <button type="submit" :disabled="loading"
-          class="w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition">
+        <p v-if="error" class="text-sm text-danger-text">{{ error }}</p>
+        <button type="submit" :disabled="loading" class="eb-btn-primary w-full mt-1">
           {{ loading ? 'Creating account…' : 'Create Account' }}
         </button>
       </form>
-
-      <p class="text-center text-sm text-gray-500">
-        {{ isLogin ? "Don't have an account?" : 'Already have an account?' }}
-        <RouterLink :to="isLogin ? '/register' : '/login'" class="text-gray-900 font-semibold hover:underline ml-1">
-          {{ isLogin ? 'Sign up' : 'Sign in' }}
-        </RouterLink>
-      </p>
     </div>
+
+    <p class="text-center text-sm text-ink-500 mt-6">
+      {{ isLogin ? "Don't have an account?" : 'Already have an account?' }}
+      <RouterLink :to="isLogin ? '/register' : '/login'" class="text-brand-700 font-semibold hover:underline ml-1">
+        {{ isLogin ? 'Sign up' : 'Sign in' }}
+      </RouterLink>
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { Salad } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()

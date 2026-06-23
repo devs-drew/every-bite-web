@@ -1,17 +1,18 @@
 <template>
-  <div class="flex items-center justify-between py-3 px-4 group">
+  <div class="flex items-center justify-between py-2.5 px-3 rounded-2xl hover:bg-surface-sunken group transition">
     <div class="flex-1 min-w-0">
-      <p class="text-sm font-medium text-gray-800 truncate">{{ log.food_name }}</p>
-      <p class="text-xs text-gray-400 mt-0.5">
+      <p class="text-sm font-medium text-ink-900 truncate">{{ log.food_name }}</p>
+      <p class="text-[11px] text-ink-400 mt-0.5">
         {{ log.serving_qty }} × {{ log.serving_size_g }}g
         <span v-if="log.brand_name"> · {{ log.brand_name }}</span>
       </p>
     </div>
-    <div class="flex items-center gap-3 ml-2 shrink-0">
-      <span class="text-sm font-semibold text-gray-700">{{ Math.round(log.calories) }} kcal</span>
+    <div class="flex items-center gap-2 ml-2 shrink-0">
+      <span class="text-sm font-bold text-ink-800 tabular-nums">{{ Math.round(log.calories) }}</span>
+      <span class="text-[11px] text-ink-400 -ml-1">kcal</span>
       <button @click="$emit('delete', log.id)"
-        class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
-        <Trash2 class="w-4 h-4" />
+        class="ml-1 w-7 h-7 flex items-center justify-center rounded-full text-ink-300 hover:text-danger-text hover:bg-danger-bg transition">
+        <Trash2 class="w-3.5 h-3.5" />
       </button>
     </div>
   </div>

@@ -1,15 +1,16 @@
 <template>
-  <div class="space-y-3 px-4">
-    <div v-for="macro in macros" :key="macro.label" class="space-y-1">
-      <div class="flex justify-between text-xs">
-        <span class="font-medium">{{ macro.label }}</span>
-        <span class="text-muted-foreground">{{ macro.value }}g</span>
+  <div class="grid grid-cols-3 gap-3">
+    <div v-for="macro in macros" :key="macro.label"
+      class="bg-surface/70 rounded-2xl p-3 flex flex-col items-center gap-1.5">
+      <div class="relative w-full h-1.5 rounded-full bg-ink-100 overflow-hidden">
+        <div class="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+          :style="{ width: `${Math.min((macro.value / macro.goal) * 100, 100)}%`, backgroundColor: macro.color }" />
       </div>
-      <div class="h-2 rounded-full bg-muted overflow-hidden">
-        <div class="h-full rounded-full transition-all duration-500"
-          :class="macro.color"
-          :style="{ width: `${Math.min((macro.value / macro.goal) * 100, 100)}%` }" />
+      <div class="flex items-baseline gap-1">
+        <span class="text-base font-bold text-ink-900 tabular-nums">{{ macro.value }}</span>
+        <span class="text-[11px] text-ink-400">g</span>
       </div>
+      <span class="text-[11px] font-medium" :style="{ color: macro.color }">{{ macro.label }}</span>
     </div>
   </div>
 </template>
@@ -23,8 +24,8 @@ const props = defineProps<{
 }>()
 
 const macros = computed(() => [
-  { label: 'Protein', value: Math.round(props.protein), goal: props.proteinGoal ?? 150, color: 'bg-blue-500' },
-  { label: 'Carbs', value: Math.round(props.carbs), goal: props.carbsGoal ?? 250, color: 'bg-amber-400' },
-  { label: 'Fat', value: Math.round(props.fat), goal: props.fatGoal ?? 65, color: 'bg-rose-400' },
+  { label: 'Protein', value: Math.round(props.protein), goal: props.proteinGoal ?? 150, color: '#3b82f6' },
+  { label: 'Carbs', value: Math.round(props.carbs), goal: props.carbsGoal ?? 250, color: '#f59e0b' },
+  { label: 'Fat', value: Math.round(props.fat), goal: props.fatGoal ?? 65, color: '#f43f5e' },
 ])
 </script>
