@@ -41,8 +41,15 @@
               <Plus class="w-4 h-4" />
             </span>
           </button>
-          <div v-if="!search.results.length" class="text-center py-12 text-ink-400 text-sm">
-            No results for "{{ query }}"
+          <div v-if="!search.results.length" class="text-center py-12 space-y-3">
+            <p class="text-sm text-ink-400">
+              {{ search.searchFailed ? 'Couldn\'t reach the food database.' : `No results for "${query}"` }}
+            </p>
+            <button v-if="search.searchFailed"
+              @click="search.searchByName(query)"
+              class="text-sm font-semibold text-brand-600">
+              Try again
+            </button>
           </div>
         </div>
 

@@ -3,10 +3,11 @@ import { WHOLE_FOODS } from '@/data/wholeFoods'
 
 // OpenFoodFacts — free, no API key. Called directly (not via the shared axios `api`
 // instance, which injects an auth token and targets the app backend).
-// Name search uses the legacy cgi/search.pl: it's the only search endpoint that sends
-// CORS headers to a browser (api/v2/search is CORS-blocked; search-a-licious sends no
-// CORS header). Barcode uses the product API.
-const SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl'
+// ph.openfoodfacts.org returns PH-specific products (Mama Sita's, Lucky Me, etc.),
+// has a smaller/more-cached dataset (fewer cold-cache HTML responses), and sends
+// Access-Control-Allow-Origin: * — verified 2026-06-24.
+// Barcode still uses world.openfoodfacts.org product API (global database).
+const SEARCH_URL = 'https://ph.openfoodfacts.org/cgi/search.pl'
 const PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
 const FIELDS = 'code,product_name,brands,serving_quantity,nutriments'
 
@@ -39,28 +40,38 @@ function toFoodResult(p: any): FoodResult | null {
 
 export const foodSearchService = {
   // ponytail: no AbortController — the view debounces 400ms. Add if rapid typing shows out-of-order results.
-  async searchByName(q: string, page = 1) {
+  async searchByName(q: string, page = 1): Promise<{ data: { products: FoodResult[]; failed?: boolean } }> {
     const lower = q.toLowerCase()
 
-    // 1. Local whole foods — instant, no network (whole/unpackaged foods not in OFF)
-    const localMatches = WHOLE_FOODS.filter(f => f.food_name.toLowerCase().includes(lower))
+    // 1. Local whole foods — tokenized scoring so "garlic, slice" finds "Garlic, raw"
+    //    and "lean ground beef" ranks "Ground Beef, lean" above "Ground Pork"
+    const tokens = lower.split(/[\s,]+/).filter(w => w.length >= 3)
+    const localMatches = tokens.length === 0
+      ? WHOLE_FOODS.filter(f => f.food_name.toLowerCase().includes(lower))
+      : WHOLE_FOODS
+          .map(f => ({ f, score: tokens.filter(t => f.food_name.toLowerCase().includes(t)).length }))
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(({ f }) => f)
 
-    // 2. Philippines-scoped OFF search for packaged products
-    let offProducts: FoodResult[] = []
+    // 2. PH OFF search for packaged products
+    const url = `${SEARCH_URL}?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page=${page}&page_size=20&fields=${FIELDS}`
     try {
-      // ponytail: no PH country filter — adding tag params breaks CORS on cgi/search.pl (CDN stops sending ACAO header). Local WHOLE_FOODS list handles Filipino staples.
-      const url = `${SEARCH_URL}?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page=${page}&page_size=20&fields=${FIELDS}`
       const res = await fetch(url)
-      if (res.ok) {
-        const json = await res.json()
-        offProducts = (json.products ?? [])
-          .map(toFoodResult)
-          .filter((f: FoodResult | null): f is FoodResult => f !== null)
+      const contentType = res.headers.get('content-type') ?? ''
+      if (!res.ok || !contentType.includes('json')) {
+        // OFF returned HTML ("temporarily unavailable") — surface the failure so the UI
+        // can show "Couldn't reach food database" instead of a silent empty list.
+        return { data: { products: localMatches, failed: true } }
       }
-    } catch {}
-
-    // Local results first — they're more specific and always correct
-    return { data: { products: [...localMatches, ...offProducts] } }
+      const json = await res.json()
+      const offProducts = (json.products ?? [])
+        .map(toFoodResult)
+        .filter((f: FoodResult | null): f is FoodResult => f !== null)
+      return { data: { products: [...localMatches, ...offProducts] } }
+    } catch {
+      return { data: { products: localMatches, failed: true } }
+    }
   },
 
   async searchByBarcode(barcode: string) {
