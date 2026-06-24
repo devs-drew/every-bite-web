@@ -1,39 +1,42 @@
 <template>
-  <AppLayout :title="`${greeting},`">
-    <template #header-right>
+  <AppLayout title="">
+    <template #header-left>
       <RouterLink to="/profile"
-        class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center shadow-xs active:scale-95 transition">
+        class="w-10 h-10 rounded-full bg-brand-500 text-white font-bold flex items-center justify-center shadow-xs active:scale-95 transition flex-shrink-0">
         {{ initial }}
       </RouterLink>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-ink-500">{{ greeting }}!</p>
+        <p class="text-lg font-bold text-ink-900 leading-tight">{{ firstName }}</p>
+      </div>
     </template>
 
-    <div class="px-5 pb-4 space-y-5">
-      <p class="-mt-2 text-xl font-bold text-ink-900">{{ firstName }} 👋</p>
 
-      <!-- Hero summary card -->
-      <div class="bg-gradient-to-b from-brand-50 to-brand-100/50 rounded-4xl p-6 shadow-card">
-        <div class="flex flex-col items-center">
-          <CalorieSummaryRing
-            :consumed="summary?.totals.calories ?? 0"
-            :target="auth.user?.daily_calorie_target ?? 2000" />
-        </div>
-        <div class="mt-5">
-          <MacroBarsSection
-            :protein="summary?.totals.protein_g ?? 0"
-            :carbs="summary?.totals.carbs_g ?? 0"
-            :fat="summary?.totals.fat_g ?? 0" />
-        </div>
-      </div>
+    <div class="px-5 pb-4 space-y-4">
+      <DailyIntakeCard
+        :consumed="summary?.totals.calories ?? 0"
+        :target="auth.user?.daily_calorie_target ?? 2000"
+        :first-name="firstName" />
 
-      <!-- Weekly chart -->
+      <WeekCalendar
+        :selected-date="selectedDate"
+        @select="onDateSelect" />
+
+      <MacroBarsSection
+        :protein="summary?.totals.protein_g ?? 0"
+        :carbs="summary?.totals.carbs_g ?? 0"
+        :fat="summary?.totals.fat_g ?? 0" />
+
       <WeeklyChart
         :week-data="foodLog.weekHistory"
-        :target="auth.user?.daily_calorie_target ?? 2000" />
+        :target="auth.user?.daily_calorie_target ?? 2000"
+        :today-calories="summary?.totals.calories ?? 0"
+        :selected-date="selectedDate" />
 
       <!-- Meals -->
       <div class="space-y-3">
         <div class="flex items-center justify-between px-1">
-          <h2 class="eb-eyebrow">Today's meals</h2>
+          <h2 class="eb-eyebrow">{{ mealsLabel }}</h2>
           <RouterLink to="/search" class="text-xs font-semibold text-brand-700">+ Add</RouterLink>
         </div>
         <MealSectionCard
@@ -41,7 +44,7 @@
           :key="meal"
           :meal-type="meal"
           :logs="logsForMeal(meal)"
-          :date="today"
+          :date="selectedDate"
           @delete="handleDelete" />
       </div>
     </div>
@@ -49,13 +52,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import CalorieSummaryRing from '@/components/dashboard/CalorieSummaryRing.vue'
+import DailyIntakeCard from '@/components/dashboard/DailyIntakeCard.vue'
+import WeekCalendar from '@/components/dashboard/WeekCalendar.vue'
 import MacroBarsSection from '@/components/dashboard/MacroBarsSection.vue'
-import MealSectionCard from '@/components/dashboard/MealSectionCard.vue'
 import WeeklyChart from '@/components/dashboard/WeeklyChart.vue'
+import MealSectionCard from '@/components/dashboard/MealSectionCard.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useFoodLogStore } from '@/stores/foodLog'
 
@@ -64,9 +68,17 @@ const foodLog = useFoodLogStore()
 const today = new Date().toISOString().slice(0, 10)
 const meals = ['breakfast', 'lunch', 'dinner', 'snack'] as const
 
-const summary = computed(() => foodLog.summary[today])
-const logsForDate = computed(() => foodLog.logs[today] ?? [])
+const selectedDate = ref(today)
+
+const summary = computed(() => foodLog.summary[selectedDate.value])
+const logsForDate = computed(() => foodLog.logs[selectedDate.value] ?? [])
 const logsForMeal = (meal: string) => logsForDate.value.filter(l => l.meal_type === meal)
+
+const mealsLabel = computed(() => {
+  if (selectedDate.value === today) return "Today's meals"
+  const d = new Date(selectedDate.value + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' meals'
+})
 
 const firstName = computed(() => auth.user?.name?.split(' ')[0] ?? 'there')
 const initial = computed(() => (auth.user?.name?.[0] ?? 'U').toUpperCase())
@@ -77,8 +89,16 @@ const greeting = computed(() => {
   return 'Good evening'
 })
 
+async function onDateSelect(iso: string) {
+  selectedDate.value = iso
+  await Promise.all([
+    foodLog.fetchLogsForDate(iso),
+    foodLog.fetchSummary(iso),
+  ])
+}
+
 async function handleDelete(id: number) {
-  await foodLog.deleteLog(id, today)
+  await foodLog.deleteLog(id, selectedDate.value)
 }
 
 onMounted(async () => {
