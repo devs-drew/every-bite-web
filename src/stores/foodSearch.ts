@@ -28,13 +28,16 @@ export const useFoodSearchStore = defineStore('foodSearch', () => {
   const query = ref('')
   const isSearching = ref(false)
   const lastBarcode = ref('')
+  const searchFailed = ref(false)
 
   async function searchByName(q: string, page = 1) {
     query.value = q
     isSearching.value = true
+    searchFailed.value = false
     try {
       const { data } = await foodSearchService.searchByName(q, page)
       results.value = data.products ?? []
+      searchFailed.value = data.failed ?? false
     } finally { isSearching.value = false }
   }
 
@@ -51,7 +54,8 @@ export const useFoodSearchStore = defineStore('foodSearch', () => {
     results.value = []
     query.value = ''
     lastBarcode.value = ''
+    searchFailed.value = false
   }
 
-  return { results, query, isSearching, lastBarcode, searchByName, searchByBarcode, clearResults }
+  return { results, query, isSearching, lastBarcode, searchFailed, searchByName, searchByBarcode, clearResults }
 })

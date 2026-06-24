@@ -69,6 +69,18 @@ export const WHOLE_FOODS: FoodResult[] = [
     nutrients_per_100g: { calories: 263, protein_g: 17, carbs_g: 0, fat_g: 21, sodium_mg: 62 },
   },
   {
+    off_product_id: 'local-ground-beef-lean',
+    food_name: 'Ground Beef, lean raw',
+    serving_size_g: 100,
+    nutrients_per_100g: { calories: 215, protein_g: 20.7, carbs_g: 0, fat_g: 13.9, sodium_mg: 75 },
+  },
+  {
+    off_product_id: 'local-ground-beef-regular',
+    food_name: 'Ground Beef, regular raw',
+    serving_size_g: 100,
+    nutrients_per_100g: { calories: 254, protein_g: 17.2, carbs_g: 0, fat_g: 20, sodium_mg: 72 },
+  },
+  {
     off_product_id: 'local-beef-sirloin-raw',
     food_name: 'Beef Sirloin, raw',
     serving_size_g: 150,
@@ -301,5 +313,17 @@ export const WHOLE_FOODS: FoodResult[] = [
     food_name: 'Peanuts, roasted',
     serving_size_g: 30,
     nutrients_per_100g: { calories: 585, protein_g: 25, carbs_g: 16, fat_g: 49, fiber_g: 8.5, sodium_mg: 7 },
+  },
+  {
+    off_product_id: 'local-brown-sugar',
+    food_name: 'Brown Sugar',
+    serving_size_g: 100,
+    nutrients_per_100g: { calories: 380, protein_g: 0, carbs_g: 98.1, fat_g: 0, sodium_mg: 28 },
+  },
+  {
+    off_product_id: 'local-white-sugar',
+    food_name: 'White Sugar',
+    serving_size_g: 100,
+    nutrients_per_100g: { calories: 387, protein_g: 0, carbs_g: 99.8, fat_g: 0, sodium_mg: 1 },
   },
 ]
