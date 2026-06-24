@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { Salad } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
@@ -80,6 +80,13 @@ const isLogin = computed(() => route.path === '/login')
 const loading = ref(false)
 const error = ref('')
 const form = reactive({ name: '', email: '', password: '', daily_calorie_target: 2000 })
+
+onMounted(() => {
+  const savedGoal = localStorage.getItem('onboarding_goal')
+  if (savedGoal) form.daily_calorie_target = Number(savedGoal)
+  const savedName = localStorage.getItem('onboarding_name')
+  if (savedName) form.name = savedName
+})
 
 function handleDemo() {
   auth.loginAsDemo()

@@ -8,6 +8,11 @@ export interface User {
   email: string
   age?: number
   weight_kg?: number
+  height_cm?: number
+  gender?: 'male' | 'female'
+  activity_factor?: number
+  goal_direction?: 'lose' | 'maintain' | 'gain'
+  calorie_adjustment?: number
   goal_weight_kg?: number
   daily_calorie_target: number
 }
@@ -52,13 +57,19 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function updateProfile(payload: object) {
-    const { data } = await authService.updateProfile(payload)
-    user.value = data
+    if (user.value) Object.assign(user.value, payload)
+    if (token.value !== 'demo-token') {
+      const { data } = await authService.updateProfile(payload)
+      user.value = data
+    }
   }
 
   async function updateGoals(payload: object) {
-    const { data } = await authService.updateGoals(payload)
-    user.value = data
+    if (user.value) Object.assign(user.value, payload)
+    if (token.value !== 'demo-token') {
+      const { data } = await authService.updateGoals(payload)
+      user.value = data
+    }
   }
 
   function loginAsDemo() {
@@ -69,8 +80,13 @@ export const useAuthStore = defineStore('auth', () => {
       email: 'demo@everybite.app',
       age: 28,
       weight_kg: 75,
+      height_cm: 175,
+      gender: 'male',
+      activity_factor: 1.55,
+      goal_direction: 'lose',
+      calorie_adjustment: -500,
       goal_weight_kg: 70,
-      daily_calorie_target: 2000,
+      daily_calorie_target: 2022,
     }
   }
 
