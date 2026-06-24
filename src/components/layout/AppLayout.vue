@@ -1,11 +1,16 @@
 <template>
   <div class="flex flex-col min-h-screen bg-canvas max-w-md mx-auto relative">
     <header class="sticky top-0 z-20 bg-canvas/85 backdrop-blur-md px-5 pt-5 pb-3 flex items-center gap-3">
-      <button v-if="showBack" @click="router.back()"
-        class="w-9 h-9 -ml-1 rounded-full bg-surface shadow-xs flex items-center justify-center text-ink-700 active:scale-95 transition">
-        <ChevronLeft class="w-5 h-5" />
-      </button>
-      <h1 class="text-xl font-bold tracking-tight text-ink-900 flex-1">{{ title }}</h1>
+      <template v-if="$slots['header-left']">
+        <slot name="header-left" />
+      </template>
+      <template v-else>
+        <button v-if="showBack" @click="router.back()"
+          class="w-9 h-9 -ml-1 rounded-full bg-surface shadow-xs flex items-center justify-center text-ink-700 active:scale-95 transition">
+          <ChevronLeft class="w-5 h-5" />
+        </button>
+        <h1 class="text-xl font-bold tracking-tight text-ink-900 flex-1">{{ title }}</h1>
+      </template>
       <slot name="header-right" />
     </header>
 
@@ -38,7 +43,7 @@
 
 <script setup lang="ts">
 import { RouterLink, useRouter, useRoute } from 'vue-router'
-import { ChevronLeft, LayoutGrid, NotebookPen, Search, User } from '@lucide/vue'
+import { ChevronLeft, LayoutGrid, BarChart2, Search, User } from '@lucide/vue'
 
 defineProps<{ title: string; showBack?: boolean }>()
 
@@ -47,7 +52,7 @@ const route = useRoute()
 
 const tabs = [
   { to: '/dashboard', label: 'Home', icon: LayoutGrid },
-  { to: '/log', label: 'Log', icon: NotebookPen },
+  { to: '/stats', label: 'Stats', icon: BarChart2 },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/profile', label: 'Profile', icon: User },
 ]
