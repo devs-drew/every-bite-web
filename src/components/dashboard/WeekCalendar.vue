@@ -57,17 +57,17 @@ const emit = defineEmits<{ select: [iso: string] }>()
 
 const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
+function localIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 function toSunday(d: Date): Date {
   const copy = new Date(d)
   copy.setDate(copy.getDate() - copy.getDay())
-  copy.setHours(0, 0, 0, 0)
   return copy
 }
 
-const todayMidnight = new Date()
-todayMidnight.setHours(0, 0, 0, 0)
-const todayIso = todayMidnight.toISOString().slice(0, 10)
-
+const todayIso = localIso(new Date())
 const weekStart = ref(toSunday(new Date()))
 
 const monthLabel = computed(() => {
@@ -80,7 +80,7 @@ const weekDays = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart.value)
     d.setDate(d.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso = localIso(d)
     return {
       iso,
       date: d.getDate(),

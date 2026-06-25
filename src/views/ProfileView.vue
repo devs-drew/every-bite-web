@@ -219,18 +219,6 @@
       @cancel="showUnsavedModal = false"
     />
 
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="toast"
-          class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-lg whitespace-nowrap"
-          :class="toast.type === 'error' ? 'bg-red-500' : 'bg-brand-600'"
-        >
-          {{ toast.msg }}
-        </div>
-      </Transition>
-    </Teleport>
   </AppLayout>
 </template>
 
@@ -241,6 +229,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -320,13 +309,7 @@ function setGoalDirection(dir: 'lose' | 'maintain' | 'gain') {
 }
 
 // ── Toast ────────────────────────────────────────────────
-const toast = ref<{ msg: string; type: 'success' | 'error' } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout>
-function showToast(msg: string, type: 'success' | 'error' = 'success') {
-  clearTimeout(toastTimer)
-  toast.value = { msg, type }
-  toastTimer = setTimeout(() => (toast.value = null), 3000)
-}
+const { show: showToast } = useToast()
 
 // ── Dirty tracking ───────────────────────────────────────
 type Snap = { name: string; email: string; age: number; gender: string; weight_kg: number; height_cm: number; activity_factor: number; goal_weight_kg: number | undefined; daily_calorie_target: number; goal_direction: string; calorie_adjustment: number }
@@ -414,15 +397,3 @@ onMounted(async () => {
   clean = snapshot()
 })
 </script>
-
-<style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(8px);
-}
-</style>
