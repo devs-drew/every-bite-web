@@ -1,6 +1,7 @@
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 bg-black flex flex-col">
+    <!-- Web only — native MLKit provides its own full-screen camera UI -->
+    <div v-if="!isNative" class="fixed inset-0 z-50 bg-black flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 pt-12 pb-4 z-10">
         <button @click="close" class="text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition">
@@ -16,17 +17,13 @@
 
         <!-- Viewfinder overlay -->
         <div class="relative z-10 w-64 h-40">
-          <!-- Corner marks -->
           <span class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg" />
           <span class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg" />
           <span class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg" />
           <span class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg" />
-
-          <!-- Scanning line animation -->
           <div v-if="scanning" class="absolute inset-x-2 h-0.5 bg-green-400 rounded-full scan-line" />
         </div>
 
-        <!-- Dim overlay outside viewfinder -->
         <div class="absolute inset-0 pointer-events-none"
           style="background: radial-gradient(ellipse 280px 180px at center, transparent 80%, rgba(0,0,0,0.6) 100%)" />
       </div>
@@ -44,9 +41,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { X } from '@lucide/vue'
+import { Capacitor } from '@capacitor/core'
+import { BarcodeScanner as MLKitScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning'
 
 const emit = defineEmits<{ detected: [barcode: string]; close: [] }>()
 
+const isNative = Capacitor.isNativePlatform()
+
+// --- Web path ---
 const videoEl = ref<HTMLVideoElement | null>(null)
 const scanning = ref(false)
 const error = ref('')
@@ -73,7 +75,6 @@ async function startCamera() {
 }
 
 async function initDetector() {
-  // Use native BarcodeDetector (Chrome 83+) — fast, no library needed
   if ('BarcodeDetector' in window) {
     detector = new (window as any).BarcodeDetector({
       formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'],
@@ -93,9 +94,8 @@ function scanLoop() {
   detector.detect(videoEl.value)
     .then((barcodes: any[]) => {
       if (barcodes.length > 0) {
-        const value = barcodes[0].rawValue
         stopCamera()
-        emit('detected', value)
+        emit('detected', barcodes[0].rawValue)
       } else {
         animFrame = requestAnimationFrame(scanLoop)
       }
@@ -115,8 +115,40 @@ function close() {
   emit('close')
 }
 
-onMounted(startCamera)
-onUnmounted(stopCamera)
+// --- Native path (Android/iOS via Capacitor MLKit) ---
+async function startNativeScan() {
+  try {
+    const { camera } = await MLKitScanner.requestPermissions()
+    if (camera !== 'granted' && camera !== 'limited') {
+      emit('close')
+      return
+    }
+    const { barcodes } = await MLKitScanner.scan({
+      formats: [
+        BarcodeFormat.QrCode,
+        BarcodeFormat.Ean13,
+        BarcodeFormat.Ean8,
+        BarcodeFormat.UpcA,
+        BarcodeFormat.UpcE,
+        BarcodeFormat.Code128,
+        BarcodeFormat.Code39,
+      ],
+    })
+    if (barcodes.length && barcodes[0].rawValue) emit('detected', barcodes[0].rawValue)
+    else emit('close')
+  } catch {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  if (isNative) startNativeScan()
+  else startCamera()
+})
+
+onUnmounted(() => {
+  if (!isNative) stopCamera()
+})
 </script>
 
 <style scoped>

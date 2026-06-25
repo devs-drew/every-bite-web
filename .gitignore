@@ -12,13 +12,14 @@ dist
 dist-ssr
 *.local
 
-# Capacitor native projects (generated — not committed until Android build is configured)
-android/
+# Capacitor native projects
+# android/ is committed — contains app config (AndroidManifest.xml, build.gradle, etc.)
 ios/
 
 # Env files with secrets
 .env.production
 .env.local
+.env.device
 
 # Editor directories and files
 .vscode/*
