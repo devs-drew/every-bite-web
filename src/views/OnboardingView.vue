@@ -208,6 +208,7 @@ import { ref, computed, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Salad, ScanLine, Trophy } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
+import { mifflinStJeorBmr, tdee as computeTdee, dailyTarget, lbsToKg, ftInToCm } from '@/utils/nutrition'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -266,10 +267,9 @@ const bmr = computed(() => {
     ? profile.heightCm
     : (profile.heightFt != null ? (profile.heightFt * 12 + (profile.heightIn ?? 0)) * 2.54 : null)
   if (!kg || !cm || !profile.age) return 0
-  const base = 10 * kg + 6.25 * cm - 5 * profile.age
-  return Math.round(profile.gender === 'male' ? base + 5 : base - 161)
+  return mifflinStJeorBmr({ weightKg: kg, heightCm: cm, age: profile.age, gender: profile.gender })
 })
-const tdee = computed(() => Math.round(bmr.value * profile.activityFactor))
+const tdee = computed(() => computeTdee(bmr.value, profile.activityFactor))
 
 const slides = [
   { type: 'content' as const, icon: Salad,   title: 'Log Every Bite',           subtitle: 'Track your meals, calories, and macros with ease. Every bite counts toward your goals.' },
@@ -284,7 +284,7 @@ const isLast = computed(() => current.value === slides.length - 1)
 
 watch(current, (idx) => {
   if (slides[idx]?.type === 'setup')
-    goalKcal.value = Math.max(1200, tdee.value + goalConfig.adjustment)
+    goalKcal.value = dailyTarget(tdee.value, goalConfig.adjustment)
 })
 
 let touchStartX = 0
@@ -314,10 +314,10 @@ function skip() {
 async function finish() {
   const heightCm = profile.unit === 'metric'
     ? profile.heightCm
-    : (profile.heightFt != null ? Math.round(((profile.heightFt * 12) + (profile.heightIn ?? 0)) * 2.54) : null)
+    : (profile.heightFt != null ? ftInToCm(profile.heightFt, profile.heightIn ?? 0) : null)
   const weightKg = profile.unit === 'metric'
     ? profile.weightKg
-    : (profile.weightLbs != null ? Math.round((profile.weightLbs / 2.205) * 10) / 10 : null)
+    : (profile.weightLbs != null ? lbsToKg(profile.weightLbs) : null)
 
   localStorage.setItem('onboarding_seen',               '1')
   localStorage.setItem('onboarding_goal',               String(goalKcal.value))
