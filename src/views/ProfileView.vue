@@ -15,7 +15,7 @@
       <!-- Personal Info -->
       <section class="space-y-3">
         <h2 class="eb-eyebrow px-1">Personal Info</h2>
-        <form @submit.prevent="saveProfile" class="eb-card p-5 space-y-4">
+        <div class="eb-card p-5 space-y-4">
           <!-- Gender -->
           <div>
             <label class="eb-label">Gender</label>
@@ -116,17 +116,13 @@
               </button>
             </div>
           </div>
-
-          <button type="submit" :disabled="savingProfile" class="eb-btn-primary w-full">
-            {{ savingProfile ? 'Saving…' : 'Save Info' }}
-          </button>
-        </form>
+        </div>
       </section>
 
       <!-- Goals -->
       <section class="space-y-3">
         <h2 class="eb-eyebrow px-1">Goals</h2>
-        <form @submit.prevent="saveGoals" class="eb-card p-5 space-y-4">
+        <div class="eb-card p-5 space-y-4">
           <!-- Goal direction -->
           <div>
             <label class="eb-label">Goal</label>
@@ -177,7 +173,7 @@
             </div>
             <input v-model.number="goals.daily_calorie_target" type="number" min="500" max="9999" required class="eb-input" />
             <p v-if="bmr > 0" class="text-xs text-ink-400 mt-1.5">
-              Calculated from your profile · tap Save Goals to apply
+              Updates automatically when activity or pace changes
             </p>
           </div>
 
@@ -186,41 +182,79 @@
             <label class="eb-label">Goal weight ({{ unit === 'metric' ? 'kg' : 'lbs' }})</label>
             <input v-model.number="goals.goal_weight_kg" type="number" min="20" max="500" step="0.1" placeholder="—" class="eb-input" />
           </div>
-
-          <button type="submit" :disabled="savingGoals" class="eb-btn-primary w-full">
-            {{ savingGoals ? 'Saving…' : 'Save Goals' }}
-          </button>
-        </form>
+        </div>
       </section>
 
-      <button @click="handleLogout" class="eb-btn-danger w-full">
+      <!-- Single save button -->
+      <button @click="saveAll" :disabled="saving" class="eb-btn-primary w-full">
+        {{ saving ? 'Saving…' : 'Save Changes' }}
+      </button>
+
+      <!-- Sign out -->
+      <button @click="showLogoutModal = true" class="eb-btn-danger w-full">
         Sign Out
       </button>
     </div>
+
+    <!-- Logout confirm -->
+    <ConfirmModal
+      :open="showLogoutModal"
+      title="Sign out?"
+      message="You'll need to sign in again to access your account."
+      confirmLabel="Sign Out"
+      cancelLabel="Cancel"
+      :destructive="true"
+      @confirm="confirmLogout"
+      @cancel="showLogoutModal = false"
+    />
+
+    <!-- Unsaved changes confirm -->
+    <ConfirmModal
+      :open="showUnsavedModal"
+      title="Unsaved changes"
+      message="You have unsaved changes. Leave without saving?"
+      confirmLabel="Leave"
+      cancelLabel="Stay"
+      @confirm="leaveWithoutSaving"
+      @cancel="showUnsavedModal = false"
+    />
+
+    <!-- Toast -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div
+          v-if="toast"
+          class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-lg whitespace-nowrap"
+          :class="toast.type === 'error' ? 'bg-red-500' : 'bg-brand-600'"
+        >
+          {{ toast.msg }}
+        </div>
+      </Transition>
+    </Teleport>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 
-const savingProfile = ref(false)
-const savingGoals = ref(false)
+const saving = ref(false)
+const showLogoutModal = ref(false)
+const showUnsavedModal = ref(false)
 
 const unit = ref<'metric' | 'imperial'>(
   (localStorage.getItem('onboarding_unit') as 'metric' | 'imperial') ?? 'metric'
 )
 
-// Imperial height helpers (display only — always stored as cm in profile.height_cm)
 const heightFt = ref(Math.floor((auth.user?.height_cm ?? 170) / 2.54 / 12))
 const heightIn = ref(Math.round(((auth.user?.height_cm ?? 170) / 2.54) % 12))
-
-// Imperial weight helper (display only — always stored as kg in profile.weight_kg)
 const weightLbs = ref(Math.round((auth.user?.weight_kg ?? 70) * 2.205))
 
 const profile = reactive({
@@ -234,10 +268,10 @@ const profile = reactive({
 })
 
 const goals = reactive({
-  goal_weight_kg:      auth.user?.goal_weight_kg,
-  daily_calorie_target:auth.user?.daily_calorie_target ?? 2000,
-  goal_direction:      (auth.user?.goal_direction ?? localStorage.getItem('onboarding_goal_direction') ?? 'maintain') as 'lose' | 'maintain' | 'gain',
-  calorie_adjustment:  auth.user?.calorie_adjustment ?? Number(localStorage.getItem('onboarding_calorie_adjustment') ?? 0),
+  goal_weight_kg:       auth.user?.goal_weight_kg,
+  daily_calorie_target: auth.user?.daily_calorie_target ?? 2000,
+  goal_direction:       (auth.user?.goal_direction ?? localStorage.getItem('onboarding_goal_direction') ?? 'maintain') as 'lose' | 'maintain' | 'gain',
+  calorie_adjustment:   auth.user?.calorie_adjustment ?? Number(localStorage.getItem('onboarding_calorie_adjustment') ?? 0),
 })
 
 const initial = computed(() => (profile.name?.[0] ?? 'U').toUpperCase())
@@ -269,7 +303,12 @@ const bmr = computed(() => {
 })
 const tdee = computed(() => Math.round(bmr.value * profile.activity_factor))
 
-// Sync imperial helpers → metric storage when they change
+// Recalculate target live when activity or pace changes
+watch([tdee, () => goals.calorie_adjustment], ([newTdee, newAdj]) => {
+  if (newTdee > 0) goals.daily_calorie_target = Math.max(1200, newTdee + newAdj)
+})
+
+// Sync imperial helpers → metric storage
 watch(weightLbs, (lbs) => { profile.weight_kg = Math.round((lbs / 2.205) * 10) / 10 })
 watch([heightFt, heightIn], ([ft, inn]) => { profile.height_cm = Math.round((ft * 12 + inn) * 2.54) })
 
@@ -280,24 +319,75 @@ function setGoalDirection(dir: 'lose' | 'maintain' | 'gain') {
   else if (dir === 'gain' && goals.calorie_adjustment <= 0) goals.calorie_adjustment = 500
 }
 
-async function saveProfile() {
-  savingProfile.value = true
+// ── Toast ────────────────────────────────────────────────
+const toast = ref<{ msg: string; type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout>
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  clearTimeout(toastTimer)
+  toast.value = { msg, type }
+  toastTimer = setTimeout(() => (toast.value = null), 3000)
+}
+
+// ── Dirty tracking ───────────────────────────────────────
+type Snap = { name: string; email: string; age: number; gender: string; weight_kg: number; height_cm: number; activity_factor: number; goal_weight_kg: number | undefined; daily_calorie_target: number; goal_direction: string; calorie_adjustment: number }
+let clean: Snap = { ...profile, ...goals }
+
+function snapshot(): Snap {
+  return { ...profile, ...goals }
+}
+
+const isDirty = computed(() => {
+  const curr = snapshot()
+  return (Object.keys(curr) as (keyof Snap)[]).some(k => curr[k] !== clean[k])
+})
+
+// ── Save ─────────────────────────────────────────────────
+async function saveAll() {
+  saving.value = true
   localStorage.setItem('onboarding_unit', unit.value)
-  try { await auth.updateProfile({ ...profile }) } finally { savingProfile.value = false }
+  try {
+    if (tdee.value > 0) goals.daily_calorie_target = Math.max(1200, tdee.value + goals.calorie_adjustment)
+    await auth.updateProfile({ ...profile })
+    await auth.updateGoals({ ...goals })
+    clean = snapshot()
+    showToast('Changes saved!')
+  } catch {
+    showToast('Failed to save. Try again.', 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
-async function saveGoals() {
-  const target = Math.max(1200, tdee.value + goals.calorie_adjustment)
-  if (target > 0) goals.daily_calorie_target = target
-  savingGoals.value = true
-  try { await auth.updateGoals({ ...goals }) } finally { savingGoals.value = false }
+// ── Logout ───────────────────────────────────────────────
+async function confirmLogout() {
+  try {
+    await auth.logout()
+    router.push('/login')
+  } catch {
+    showLogoutModal.value = false
+    showToast('Sign out failed. Try again.', 'error')
+  }
 }
 
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
+// ── Unsaved navigation guard ─────────────────────────────
+let pendingRoute = ''
+let confirmedLeave = false
+
+onBeforeRouteLeave((to) => {
+  if (isDirty.value && !confirmedLeave) {
+    pendingRoute = to.fullPath
+    showUnsavedModal.value = true
+    return false
+  }
+})
+
+function leaveWithoutSaving() {
+  confirmedLeave = true
+  showUnsavedModal.value = false
+  router.push(pendingRoute)
 }
 
+// ── Mount ────────────────────────────────────────────────
 onMounted(async () => {
   if (!auth.user) await auth.fetchUser()
   Object.assign(profile, {
@@ -310,16 +400,29 @@ onMounted(async () => {
     activity_factor: auth.user?.activity_factor ?? profile.activity_factor,
   })
   Object.assign(goals, {
-    goal_weight_kg:      auth.user?.goal_weight_kg,
-    daily_calorie_target:auth.user?.daily_calorie_target,
-    goal_direction:      auth.user?.goal_direction ?? goals.goal_direction,
-    calorie_adjustment:  auth.user?.calorie_adjustment ?? goals.calorie_adjustment,
+    goal_weight_kg:       auth.user?.goal_weight_kg,
+    daily_calorie_target: auth.user?.daily_calorie_target,
+    goal_direction:       auth.user?.goal_direction ?? goals.goal_direction,
+    calorie_adjustment:   auth.user?.calorie_adjustment ?? goals.calorie_adjustment,
   })
-  // sync imperial display helpers
   if (profile.height_cm) {
     heightFt.value = Math.floor(profile.height_cm / 2.54 / 12)
     heightIn.value = Math.round((profile.height_cm / 2.54) % 12)
   }
   if (profile.weight_kg) weightLbs.value = Math.round(profile.weight_kg * 2.205)
+  // Baseline for dirty tracking — set after all data is loaded
+  clean = snapshot()
 })
 </script>
+
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+</style>
