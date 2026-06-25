@@ -61,7 +61,7 @@ export const useFoodLogStore = defineStore('foodLog', () => {
   const summary = ref<Record<string, DailySummary>>({})
   const weekHistory = ref<{ date: string; calories: number }[]>([])
   const loading = ref(false)
-  const useFixtures = ref(true) // flip to false once backend is ready
+  const useFixtures = ref(false)
 
   async function fetchLogsForDate(date: string) {
     if (useFixtures.value) {
