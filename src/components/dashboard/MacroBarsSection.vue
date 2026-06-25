@@ -17,7 +17,7 @@
               stroke-width="5"
               stroke-linecap="round"
               :stroke-dasharray="ringCircumference"
-              :stroke-dashoffset="ringOffset(macro.pct)"
+              :stroke-dashoffset="ringOffset(Math.min(macro.pct, 100))"
               style="transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1)" />
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
@@ -54,7 +54,7 @@ function ringOffset(pct: number) {
 const macros = computed(() => {
   const make = (label: string, value: number, goal: number, color: string) => {
     const v = Math.round(value)
-    return { label, value: v, goal, color, pct: Math.min(Math.round((v / goal) * 100), 100) }
+    return { label, value: v, goal, color, pct: Math.round((v / goal) * 100) }
   }
   return [
     make('Protein', props.protein, props.proteinGoal ?? 150, '#3b82f6'),

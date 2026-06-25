@@ -62,10 +62,16 @@ import WeeklyChart from '@/components/dashboard/WeeklyChart.vue'
 import MealSectionCard from '@/components/dashboard/MealSectionCard.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useFoodLogStore } from '@/stores/foodLog'
+import { useToast } from '@/composables/useToast'
 
 const auth = useAuthStore()
 const foodLog = useFoodLogStore()
-const today = new Date().toISOString().slice(0, 10)
+const { show: showToast } = useToast()
+
+function localIso(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+const today = localIso()
 const meals = ['breakfast', 'lunch', 'dinner', 'snack'] as const
 
 const selectedDate = ref(today)
@@ -99,6 +105,7 @@ async function onDateSelect(iso: string) {
 
 async function handleDelete(id: number) {
   await foodLog.deleteLog(id, selectedDate.value)
+  showToast('Food removed', 'error')
 }
 
 onMounted(async () => {

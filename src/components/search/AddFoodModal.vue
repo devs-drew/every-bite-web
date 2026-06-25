@@ -65,6 +65,7 @@ import { ref, computed } from 'vue'
 import { Utensils } from '@lucide/vue'
 import { useFoodLogStore } from '@/stores/foodLog'
 import type { FoodResult } from '@/stores/foodSearch'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps<{
   modelValue: boolean
@@ -75,6 +76,7 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [boolean]; added: [] }>()
 
 const foodLog = useFoodLogStore()
+const { show: showToast } = useToast()
 const meals = ['breakfast', 'lunch', 'dinner', 'snack']
 const selectedMeal = ref(props.initialMeal ?? 'breakfast')
 const servingG = ref(props.food.serving_size_g ?? 100)
@@ -100,7 +102,8 @@ const macroPreview = computed(() => [
 async function handleAdd() {
   adding.value = true
   try {
-    const date = props.date ?? new Date().toISOString().slice(0, 10)
+    const now = new Date()
+    const date = props.date ?? `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
     await foodLog.addLog({
       food_name: props.food.food_name,
       brand_name: props.food.brand_name,
@@ -115,6 +118,7 @@ async function handleAdd() {
       carbs_g: preview.value.carbs,
       fat_g: preview.value.fat,
     })
+    showToast(`${props.food.food_name} added to ${selectedMeal.value}`)
     emit('added')
     emit('update:modelValue', false)
   } finally { adding.value = false }
