@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-canvas flex flex-col overflow-hidden select-none max-w-md mx-auto">
     <!-- Skip -->
     <div class="flex justify-end px-6 pt-12 pb-4">
-      <button @click="finish" class="text-sm font-medium text-ink-400 hover:text-ink-700 transition">Skip</button>
+      <button @click="skip" class="text-sm font-medium text-ink-400 hover:text-ink-700 transition">Skip</button>
     </div>
 
     <!-- Slides -->
@@ -58,7 +58,7 @@
             <div v-else class="mb-3" />
 
             <label class="eb-label">Age</label>
-            <input v-model.number="profile.age" type="number" min="10" max="120" class="eb-input mb-3" />
+            <input v-model.number="profile.age" type="number" min="10" max="120" placeholder="—" class="eb-input mb-3" />
 
             <p class="text-[11px] font-semibold text-ink-400 uppercase tracking-wider mb-1.5">Units</p>
             <div class="grid grid-cols-2 gap-2 mb-3">
@@ -70,24 +70,24 @@
 
             <label class="eb-label">Weight</label>
             <div class="relative mb-3">
-              <input v-if="profile.unit === 'metric'" v-model.number="profile.weightKg" type="number" min="20" max="300" class="eb-input pr-12" />
-              <input v-else v-model.number="profile.weightLbs" type="number" min="44" max="660" class="eb-input pr-12" />
+              <input v-if="profile.unit === 'metric'" v-model.number="profile.weightKg" type="number" min="20" max="300" placeholder="—" class="eb-input pr-12" />
+              <input v-else v-model.number="profile.weightLbs" type="number" min="44" max="660" placeholder="—" class="eb-input pr-12" />
               <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">{{ profile.unit === 'metric' ? 'kg' : 'lbs' }}</span>
             </div>
 
             <label class="eb-label">Height</label>
             <div class="mb-3">
               <div v-if="profile.unit === 'metric'" class="relative">
-                <input v-model.number="profile.heightCm" type="number" min="100" max="250" class="eb-input pr-12" />
+                <input v-model.number="profile.heightCm" type="number" min="100" max="250" placeholder="—" class="eb-input pr-12" />
                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">cm</span>
               </div>
               <div v-else class="grid grid-cols-2 gap-2">
                 <div class="relative">
-                  <input v-model.number="profile.heightFt" type="number" min="3" max="8" class="eb-input pr-9" />
+                  <input v-model.number="profile.heightFt" type="number" min="3" max="8" placeholder="ft" class="eb-input pr-9" />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">ft</span>
                 </div>
                 <div class="relative">
-                  <input v-model.number="profile.heightIn" type="number" min="0" max="11" class="eb-input pr-9" />
+                  <input v-model.number="profile.heightIn" type="number" min="0" max="11" placeholder="in" class="eb-input pr-9" />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">in</span>
                 </div>
               </div>
@@ -207,8 +207,10 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Salad, ScanLine, Trophy } from '@lucide/vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const current = ref(0)
 const goalKcal = ref(2000)
 const profileError = ref('')
@@ -216,13 +218,13 @@ const profileError = ref('')
 const profile = reactive({
   name: '',
   gender: 'male' as 'male' | 'female',
-  age: 25,
+  age: null as number | null,
   unit: 'metric' as 'metric' | 'imperial',
-  weightKg: 70,
-  heightCm: 170,
-  weightLbs: 154,
-  heightFt: 5,
-  heightIn: 7,
+  weightKg: null as number | null,
+  heightCm: null as number | null,
+  weightLbs: null as number | null,
+  heightFt: null as number | null,
+  heightIn: null as number | null,
   activityFactor: 1.55,
 })
 
@@ -259,10 +261,11 @@ function setDirection(dir: 'lose' | 'maintain' | 'gain') {
 }
 
 const bmr = computed(() => {
-  const kg = profile.unit === 'metric' ? profile.weightKg : profile.weightLbs / 2.205
+  const kg = profile.unit === 'metric' ? profile.weightKg : (profile.weightLbs != null ? profile.weightLbs / 2.205 : null)
   const cm = profile.unit === 'metric'
     ? profile.heightCm
-    : (profile.heightFt * 12 + profile.heightIn) * 2.54
+    : (profile.heightFt != null ? (profile.heightFt * 12 + (profile.heightIn ?? 0)) * 2.54 : null)
+  if (!kg || !cm || !profile.age) return 0
   const base = 10 * kg + 6.25 * cm - 5 * profile.age
   return Math.round(profile.gender === 'male' ? base + 5 : base - 161)
 })
@@ -303,19 +306,46 @@ function next() {
   else current.value++
 }
 
-function finish() {
+function skip() {
+  localStorage.setItem('onboarding_seen', '1')
+  router.push(auth.isAuthenticated ? '/dashboard' : '/login')
+}
+
+async function finish() {
   const heightCm = profile.unit === 'metric'
     ? profile.heightCm
-    : Math.round((profile.heightFt * 12 + profile.heightIn) * 2.54)
-  localStorage.setItem('onboarding_seen',              '1')
-  localStorage.setItem('onboarding_goal',              String(goalKcal.value))
-  localStorage.setItem('onboarding_name',              profile.name.trim())
-  localStorage.setItem('onboarding_gender',            profile.gender)
-  localStorage.setItem('onboarding_height_cm',         String(heightCm))
-  localStorage.setItem('onboarding_activity_factor',   String(profile.activityFactor))
-  localStorage.setItem('onboarding_goal_direction',    goalConfig.direction)
-  localStorage.setItem('onboarding_calorie_adjustment',String(goalConfig.adjustment))
-  localStorage.setItem('onboarding_unit',              profile.unit)
-  router.push('/login')
+    : (profile.heightFt != null ? Math.round(((profile.heightFt * 12) + (profile.heightIn ?? 0)) * 2.54) : null)
+  const weightKg = profile.unit === 'metric'
+    ? profile.weightKg
+    : (profile.weightLbs != null ? Math.round((profile.weightLbs / 2.205) * 10) / 10 : null)
+
+  localStorage.setItem('onboarding_seen',               '1')
+  localStorage.setItem('onboarding_goal',               String(goalKcal.value))
+  localStorage.setItem('onboarding_name',               profile.name.trim())
+  localStorage.setItem('onboarding_gender',             profile.gender)
+  localStorage.setItem('onboarding_height_cm',          String(heightCm))
+  localStorage.setItem('onboarding_activity_factor',    String(profile.activityFactor))
+  localStorage.setItem('onboarding_goal_direction',     goalConfig.direction)
+  localStorage.setItem('onboarding_calorie_adjustment', String(goalConfig.adjustment))
+  localStorage.setItem('onboarding_unit',               profile.unit)
+
+  if (auth.isAuthenticated) {
+    await auth.updateProfile({
+      name:            profile.name.trim(),
+      age:             profile.age,
+      gender:          profile.gender,
+      weight_kg:       weightKg,
+      height_cm:       heightCm,
+      activity_factor: profile.activityFactor,
+    })
+    await auth.updateGoals({
+      goal_direction:       goalConfig.direction,
+      calorie_adjustment:   goalConfig.adjustment,
+      daily_calorie_target: goalKcal.value,
+    })
+    router.push('/dashboard')
+  } else {
+    router.push('/login')
+  }
 }
 </script>

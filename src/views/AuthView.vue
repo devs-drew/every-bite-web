@@ -46,10 +46,6 @@
           <label class="eb-label">Password</label>
           <input v-model="form.password" type="password" required :minlength="8" placeholder="••••••••" class="eb-input" />
         </div>
-        <div>
-          <label class="eb-label">Daily Calorie Target</label>
-          <input v-model.number="form.daily_calorie_target" type="number" min="500" max="9999" placeholder="2000" class="eb-input" />
-        </div>
         <p v-if="error" class="text-sm text-danger-text">{{ error }}</p>
         <button type="submit" :disabled="loading" class="eb-btn-primary w-full mt-1">
           {{ loading ? 'Creating account…' : 'Create Account' }}
@@ -79,11 +75,9 @@ const auth = useAuthStore()
 const isLogin = computed(() => route.path === '/login')
 const loading = ref(false)
 const error = ref('')
-const form = reactive({ name: '', email: '', password: '', daily_calorie_target: 2000 })
+const form = reactive({ name: '', email: '', password: '' })
 
 onMounted(() => {
-  const savedGoal = localStorage.getItem('onboarding_goal')
-  if (savedGoal) form.daily_calorie_target = Number(savedGoal)
   const savedName = localStorage.getItem('onboarding_name')
   if (savedName) form.name = savedName
 })
@@ -113,9 +107,8 @@ async function handleRegister() {
       email: form.email,
       password: form.password,
       password_confirmation: form.password,
-      daily_calorie_target: form.daily_calorie_target,
     })
-    router.push('/dashboard')
+    router.push('/onboarding')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Registration failed. Please try again.'
   } finally { loading.value = false }

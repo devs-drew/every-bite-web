@@ -13,7 +13,7 @@ const router = createRouter({
         return '/login'
       },
     },
-    { path: '/onboarding', component: () => import('@/views/OnboardingView.vue'), meta: { guest: true } },
+    { path: '/onboarding', component: () => import('@/views/OnboardingView.vue') },
     { path: '/login', component: () => import('@/views/AuthView.vue'), meta: { guest: true } },
     { path: '/register', component: () => import('@/views/AuthView.vue'), meta: { guest: true } },
     { path: '/dashboard', component: () => import('@/views/DashboardView.vue'), meta: { requiresAuth: true } },
