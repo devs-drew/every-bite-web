@@ -230,6 +230,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { mifflinStJeorBmr, tdee as computeTdee, dailyTarget, kgToLbs, lbsToKg, cmToFtIn, ftInToCm } from '@/utils/nutrition'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -242,9 +243,9 @@ const unit = ref<'metric' | 'imperial'>(
   (localStorage.getItem('onboarding_unit') as 'metric' | 'imperial') ?? 'metric'
 )
 
-const heightFt = ref(Math.floor((auth.user?.height_cm ?? 170) / 2.54 / 12))
-const heightIn = ref(Math.round(((auth.user?.height_cm ?? 170) / 2.54) % 12))
-const weightLbs = ref(Math.round((auth.user?.weight_kg ?? 70) * 2.205))
+const heightFt = ref(cmToFtIn(auth.user?.height_cm ?? 170).ft)
+const heightIn = ref(cmToFtIn(auth.user?.height_cm ?? 170).in)
+const weightLbs = ref(kgToLbs(auth.user?.weight_kg ?? 70))
 
 const profile = reactive({
   name:            auth.user?.name ?? '',
@@ -285,21 +286,19 @@ const deficitPresets = {
   ],
 }
 
-const bmr = computed(() => {
-  if (!profile.weight_kg || !profile.height_cm || !profile.age) return 0
-  const base = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age
-  return Math.round(profile.gender === 'male' ? base + 5 : base - 161)
-})
-const tdee = computed(() => Math.round(bmr.value * profile.activity_factor))
+const bmr = computed(() => mifflinStJeorBmr({
+  weightKg: profile.weight_kg, heightCm: profile.height_cm, age: profile.age, gender: profile.gender,
+}))
+const tdee = computed(() => computeTdee(bmr.value, profile.activity_factor))
 
 // Recalculate target live when activity or pace changes
 watch([tdee, () => goals.calorie_adjustment], ([newTdee, newAdj]) => {
-  if (newTdee > 0) goals.daily_calorie_target = Math.max(1200, newTdee + newAdj)
+  if (newTdee > 0) goals.daily_calorie_target = dailyTarget(newTdee, newAdj)
 })
 
 // Sync imperial helpers → metric storage
-watch(weightLbs, (lbs) => { profile.weight_kg = Math.round((lbs / 2.205) * 10) / 10 })
-watch([heightFt, heightIn], ([ft, inn]) => { profile.height_cm = Math.round((ft * 12 + inn) * 2.54) })
+watch(weightLbs, (lbs) => { profile.weight_kg = lbsToKg(lbs) })
+watch([heightFt, heightIn], ([ft, inn]) => { profile.height_cm = ftInToCm(ft, inn) })
 
 function setGoalDirection(dir: 'lose' | 'maintain' | 'gain') {
   goals.goal_direction = dir
@@ -329,7 +328,7 @@ async function saveAll() {
   saving.value = true
   localStorage.setItem('onboarding_unit', unit.value)
   try {
-    if (tdee.value > 0) goals.daily_calorie_target = Math.max(1200, tdee.value + goals.calorie_adjustment)
+    if (tdee.value > 0) goals.daily_calorie_target = dailyTarget(tdee.value, goals.calorie_adjustment)
     await auth.updateProfile({ ...profile })
     await auth.updateGoals({ ...goals })
     clean = snapshot()
@@ -389,10 +388,11 @@ onMounted(async () => {
     calorie_adjustment:   auth.user?.calorie_adjustment ?? goals.calorie_adjustment,
   })
   if (profile.height_cm) {
-    heightFt.value = Math.floor(profile.height_cm / 2.54 / 12)
-    heightIn.value = Math.round((profile.height_cm / 2.54) % 12)
+    const ftIn = cmToFtIn(profile.height_cm)
+    heightFt.value = ftIn.ft
+    heightIn.value = ftIn.in
   }
-  if (profile.weight_kg) weightLbs.value = Math.round(profile.weight_kg * 2.205)
+  if (profile.weight_kg) weightLbs.value = kgToLbs(profile.weight_kg)
   // Baseline for dirty tracking — set after all data is loaded
   clean = snapshot()
 })
