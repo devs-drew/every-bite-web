@@ -141,6 +141,7 @@ function onSearch() {
 async function onBarcodeDetected(barcode: string) {
   showScanner.value = false
   await search.searchByBarcode(barcode)
+  if (search.results.length > 0) selectFood(search.results[0])
 }
 
 function selectFood(food: FoodResult) {
