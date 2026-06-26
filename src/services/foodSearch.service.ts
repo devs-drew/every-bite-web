@@ -16,8 +16,10 @@ const r1 = (v: unknown) => (v == null ? undefined : Math.round(Number(v) * 10) /
 function toFoodResult(p: any): FoodResult | null {
   const name = p?.product_name?.trim()
   const n = p?.nutriments ?? {}
-  const calories = n['energy-kcal_100g']
-  if (!name || calories == null) return null // skip products with no name/energy
+  if (!name) return null
+  const caloriesRaw = n['energy-kcal_100g']
+    ?? (n['energy_100g'] != null ? n['energy_100g'] / 4.184 : null)
+    ?? (n['energy-kj_100g'] != null ? n['energy-kj_100g'] / 4.184 : null)
   // brands is an array in search-a-licious, a comma-separated string in the product API
   const brand = Array.isArray(p.brands) ? p.brands[0] : p.brands?.split(',')[0]
   return {
@@ -27,7 +29,7 @@ function toFoodResult(p: any): FoodResult | null {
     barcode: p.code ? String(p.code) : undefined,
     serving_size_g: Number(p.serving_quantity) || 100,
     nutrients_per_100g: {
-      calories: Math.round(Number(calories)),
+      calories: caloriesRaw != null ? Math.round(Number(caloriesRaw)) : 0,
       protein_g: r1(n.proteins_100g),
       carbs_g: r1(n.carbohydrates_100g),
       fat_g: r1(n.fat_100g),
