@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "390417530843",
+    "project_id": "every-bite-a5cdb",
+    "storage_bucket": "every-bite-a5cdb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:390417530843:android:12949866a5a53d37d971fe",
+        "android_client_info": {
+          "package_name": "com.everybite.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgMcIBpzsV7LDyTKkGRpDqwykSC7tgow0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

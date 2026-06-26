@@ -16,6 +16,7 @@
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/preferences": "^8.0.1",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@lucide/vue": "^1.21.0",
     "@vueuse/core": "^14.3.0",
     "axios": "^1.18.1",
