@@ -33,6 +33,18 @@
         <button type="button" @click="handleDemo" class="eb-btn-secondary w-full">
           Try Demo
         </button>
+        <div class="relative my-1">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-ink-200" />
+          </div>
+          <div class="relative flex justify-center">
+            <span class="bg-white px-2 text-xs text-ink-400">or</span>
+          </div>
+        </div>
+        <button type="button" @click="handleGoogle" :disabled="loading" class="eb-btn-secondary w-full flex items-center justify-center gap-2">
+          <img src="/google-logo.svg" class="w-4 h-4" alt="" />
+          Continue with Google
+        </button>
       </form>
 
       <!-- Register -->
@@ -52,6 +64,18 @@
         <p v-if="error" class="text-sm text-danger-text">{{ error }}</p>
         <button type="submit" :disabled="loading" class="eb-btn-primary w-full mt-1">
           {{ loading ? 'Creating account…' : 'Create Account' }}
+        </button>
+        <div class="relative my-1">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-ink-200" />
+          </div>
+          <div class="relative flex justify-center">
+            <span class="bg-white px-2 text-xs text-ink-400">or</span>
+          </div>
+        </div>
+        <button type="button" @click="handleGoogle" :disabled="loading" class="eb-btn-secondary w-full flex items-center justify-center gap-2">
+          <img src="/google-logo.svg" class="w-4 h-4" alt="" />
+          Continue with Google
         </button>
       </form>
     </div>
@@ -99,6 +123,19 @@ async function handleLogin() {
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Login failed. Please try again.'
   } finally { loading.value = false }
+}
+
+async function handleGoogle() {
+  error.value = ''
+  loading.value = true
+  try {
+    const { isNewUser } = await auth.loginWithGoogle()
+    router.push(isNewUser ? '/onboarding' : '/dashboard')
+  } catch (e: any) {
+    error.value = e.response?.data?.message ?? e.message ?? 'Google sign-in failed. Please try again.'
+  } finally {
+    loading.value = false
+  }
 }
 
 async function handleRegister() {

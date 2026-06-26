@@ -72,6 +72,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithGoogle(): Promise<{ isNewUser: boolean }> {
+    const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth')
+    await GoogleAuth.initialize()
+    const googleUser = await GoogleAuth.signIn()
+    const idToken = googleUser.authentication.idToken
+    const { data } = await authService.googleSignIn(idToken)
+    setToken(data.token)
+    user.value = data.user
+    return { isNewUser: data.is_new_user }
+  }
+
   function loginAsDemo() {
     setToken('demo-token')
     user.value = {
@@ -90,5 +101,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, token, isAuthenticated, login, register, logout, fetchUser, updateProfile, updateGoals, loginAsDemo }
+  return { user, token, isAuthenticated, login, register, logout, fetchUser, updateProfile, updateGoals, loginAsDemo, loginWithGoogle }
 })
