@@ -132,7 +132,7 @@ async function handleGoogle() {
     const { isNewUser } = await auth.loginWithGoogle()
     router.push(isNewUser ? '/onboarding' : '/dashboard')
   } catch (e: any) {
-    error.value = e.message ?? 'Google sign-in failed. Please try again.'
+    error.value = e.response?.data?.message ?? e.message ?? 'Google sign-in failed. Please try again.'
   } finally {
     loading.value = false
   }
