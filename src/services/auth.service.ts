@@ -13,4 +13,5 @@ export const authService = {
   forgotPassword: (email: string) => api.post('/api/forgot-password', { email }),
   resetPassword: (payload: { token: string; email: string; password: string; password_confirmation: string }) =>
     api.post('/api/reset-password', payload),
+  googleSignIn: (idToken: string) => api.post('/api/auth/google', { id_token: idToken }),
 }
