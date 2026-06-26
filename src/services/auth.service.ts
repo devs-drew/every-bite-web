@@ -10,4 +10,7 @@ export const authService = {
   getUser: () => api.get('/api/user'),
   updateProfile: (data: object) => api.put('/api/user/profile', data),
   updateGoals: (data: object) => api.put('/api/user/goals', data),
+  forgotPassword: (email: string) => api.post('/api/forgot-password', { email }),
+  resetPassword: (payload: { token: string; email: string; password: string; password_confirmation: string }) =>
+    api.post('/api/reset-password', payload),
 }
