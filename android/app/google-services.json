@@ -12,7 +12,20 @@
           "package_name": "com.everybite.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "390417530843-8bv42fm0lqo68d1e7a773cpj5r1bk4ej.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.everybite.app",
+            "certificate_hash": "eb3f5e41e5da5154bf4fa2e85dc8e7afe2043a7f"
+          }
+        },
+        {
+          "client_id": "390417530843-rsjc03b1tnfj3nmparmtp56pkkm13eh4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAgMcIBpzsV7LDyTKkGRpDqwykSC7tgow0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "390417530843-rsjc03b1tnfj3nmparmtp56pkkm13eh4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
