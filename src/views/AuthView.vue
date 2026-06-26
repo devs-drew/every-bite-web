@@ -20,7 +20,10 @@
           <input v-model="form.email" type="email" required placeholder="you@example.com" class="eb-input" />
         </div>
         <div>
-          <label class="eb-label">Password</label>
+          <div class="flex justify-between items-center">
+            <label class="eb-label">Password</label>
+            <RouterLink to="/forgot-password" class="text-xs text-brand-700 hover:underline">Forgot password?</RouterLink>
+          </div>
           <input v-model="form.password" type="password" required placeholder="••••••••" class="eb-input" />
         </div>
         <p v-if="error" class="text-sm text-danger-text">{{ error }}</p>
