@@ -20,7 +20,7 @@ export const foodSearchService = {
     try {
       const response = await api.get('/products/search', { params: { q, page } })
       const apiProducts: FoodResult[] = response.data.products ?? []
-      return { data: { products: [...localMatches, ...apiProducts], failed: false } }
+      return { data: { products: [...localMatches, ...apiProducts], failed: response.data.failed ?? false } }
     } catch {
       return { data: { products: localMatches, failed: true } }
     }
