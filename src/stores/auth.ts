@@ -74,7 +74,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function loginWithGoogle(): Promise<{ isNewUser: boolean }> {
     const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth')
-    await GoogleAuth.initialize()
+    await GoogleAuth.initialize({
+      clientId: '390417530843-rsjc03b1tnfj3nmparmtp56pkkm13eh4.apps.googleusercontent.com',
+      scopes: ['profile', 'email'],
+      grantOfflineAccess: false,
+    })
     const googleUser = await GoogleAuth.signIn()
     const idToken = googleUser.authentication.idToken
     const { data } = await authService.googleSignIn(idToken)
